@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from data_validation import validate_dataset, print_dataset_info, ENERGY_MARKET_BOUNDS, clean_market_data, print_cleaning_summary 
 from merit_order import plot_merit_order
 from price_calculator import calculate_clearing_price, calculate_all_clearing_prices, test_calculate_clearing_price
-
+from statistical_analysis import analyze_energy_market, print_analysis_results
 
 def print_domain_validation_results(validation_results, dataset_name):
     """
