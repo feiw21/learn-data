@@ -160,19 +160,14 @@ def main():
     print(f"Demand: {sample_demand} MW")
     print(f"Calculated clearing price: {sample_price} $/MWh")
 
-    # # Calculate all clearing prices
-    # print("\nCalculating clearing prices for all periods...")
-    # all_prices = calculate_all_clearing_prices(merit_df, usep_df)
-    
-    # # Print summary statistics
-    # print("\nPrice Comparison Summary:")
-    # print(all_prices[['actual_usep', 'calculated_price']].describe())
-    
-    # # Calculate and print mean absolute error
-    # mae = (all_prices['actual_usep'] - all_prices['calculated_price']).abs().mean()
-    # print(f"\nMean Absolute Error: {mae:.2f} $/MWh")
-
-
+    # 4. Statistical Analysis
+    results = analyze_energy_market(usep_df, merit_df)
+    print_analysis_results(results)
+    # Show plots - create multiple figures for better visualization
+    plt.figure(figsize=(15, 10))
+    results['plots']
+    plt.show()
+        
 
 if __name__ == "__main__":
     main()

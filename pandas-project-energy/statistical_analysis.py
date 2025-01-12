@@ -54,7 +54,7 @@ def analyze_energy_market(usep_df, merit_df):
     
     # Demand Time Series
     sns.lineplot(data=usep_df, x='PERIOD', y='DEMAND (MW)', 
-                ci=95, ax=axes[1,0])
+                errorbar=('ci', 95), ax=axes[1,0])
     axes[1,0].set_title('Average Demand by Period')
     
     # Price Elasticity Distribution
