@@ -7,10 +7,42 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, mean_squared_error
 
+def initial_data_check(data, column_name):
+    """Basic normality check for a data column"""
+    # 1. Visual Checks
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+    
+    # Histogram
+    sns.histplot(data=data, x=column_name, ax=ax1)
+    ax1.set_title('Histogram')
+    
+    # Q-Q Plot
+    stats.probplot(data[column_name], dist="norm", plot=ax2)
+    ax2.set_title('Q-Q Plot')
+    
+    # Box Plot
+    sns.boxplot(y=data[column_name], ax=ax3)
+    ax3.set_title('Box Plot')
+    
+    # 2. Statistical Tests
+    stat, p_value = stats.normaltest(data[column_name])
+    
+    print(f"Normality Test Results for {column_name}:")
+    print(f"p-value: {p_value:.4f}")
+    print("Skewness:", stats.skew(data[column_name]))
+    print("Kurtosis:", stats.kurtosis(data[column_name]))
+    
+    return fig
+
 def analyze_energy_market(usep_df, merit_df):
     """
     Perform statistical analysis on energy market data
     """
+
+    for column in ['DEMAND (MW)', 'USEP ($/MWh)']:
+        fig = initial_data_check(usep_df, column)
+        plt.show()
+
     # 1. Time Series Analysis
     daily_stats = usep_df.groupby('DATE').agg({
         'DEMAND (MW)': ['mean', 'std', 'min', 'max'],
@@ -18,7 +50,8 @@ def analyze_energy_market(usep_df, merit_df):
     })
     
     # 2. Correlation Analysis
-    correlation = usep_df[['DEMAND (MW)', 'USEP ($/MWh)']].corr()
+    # correlation = usep_df[['DEMAND (MW)', 'USEP ($/MWh)']].corr()
+    correlation = usep_df[['DEMAND (MW)', 'USEP ($/MWh)']].corr(method='spearman')
     
     # 3. Price Elasticity Analysis
     # Calculate percentage changes
@@ -27,8 +60,10 @@ def analyze_energy_market(usep_df, merit_df):
     
     # Calculate price elasticity (avoiding division by zero)
     mask = (usep_df['price_pct_change'] != 0)
+    # elasticity = (usep_df.loc[mask, 'demand_pct_change'] / 
+    #              usep_df.loc[mask, 'price_pct_change']).mean()
     elasticity = (usep_df.loc[mask, 'demand_pct_change'] / 
-                 usep_df.loc[mask, 'price_pct_change']).mean()
+                 usep_df.loc[mask, 'price_pct_change']).median()
     
     # 4. Hypothesis Testing
     # H0: Mean demand during peak hours (9-17) = Mean demand during off-peak
@@ -36,7 +71,8 @@ def analyze_energy_market(usep_df, merit_df):
     peak_demand = usep_df[usep_df['PERIOD'].isin(peak_hours)]['DEMAND (MW)']
     offpeak_demand = usep_df[~usep_df['PERIOD'].isin(peak_hours)]['DEMAND (MW)']
     
-    t_stat, p_value = stats.ttest_ind(peak_demand, offpeak_demand)
+    # t_stat, p_value = stats.ttest_ind(peak_demand, offpeak_demand)
+    u_stat, u_pvalue = stats.mannwhitneyu(peak_demand, offpeak_demand, alternative='two-sided')
     
     # 5. Create visualizations
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
@@ -69,9 +105,13 @@ def analyze_energy_market(usep_df, merit_df):
         'daily_stats': daily_stats,
         'correlation': correlation,
         'price_elasticity': elasticity,
+        # 'peak_vs_offpeak': {
+        #     't_statistic': t_stat,
+        #     'p_value': p_value
+        # },
         'peak_vs_offpeak': {
-            't_statistic': t_stat,
-            'p_value': p_value
+            'u_statistic': u_stat,
+            'u_pvalue': u_pvalue
         },
         'plots': fig
     }
@@ -92,10 +132,13 @@ def print_analysis_results(results):
     print(f"Average elasticity: {results['price_elasticity']:.4f}")
     
     print("\n4. Peak vs Off-Peak Demand Test:")
-    print(f"t-statistic: {results['peak_vs_offpeak']['t_statistic']:.4f}")
-    print(f"p-value: {results['peak_vs_offpeak']['p_value']:.4f}")
+    # print(f"t-statistic: {results['peak_vs_offpeak']['t_statistic']:.4f}")
+    # print(f"p-value: {results['peak_vs_offpeak']['p_value']:.4f}")
+    print(f"u-statistic: {results['peak_vs_offpeak']['u_statistic']:.4f}")
+    print(f"u-pvalue: {results['peak_vs_offpeak']['u_pvalue']:.4f}")
     
-    if results['peak_vs_offpeak']['p_value'] < 0.05:
+    # if results['peak_vs_offpeak']['p_value'] < 0.05:
+    if results['peak_vs_offpeak']['u_pvalue'] < 0.05:
         print("Conclusion: Significant difference between peak and off-peak demand")
     else:
         print("Conclusion: No significant difference between peak and off-peak demand")
