@@ -25,12 +25,27 @@ def initial_data_check(data, column_name):
     ax3.set_title('Box Plot')
     
     # 2. Statistical Tests
+    # D'Agostino and Pearson's test
     stat, p_value = stats.normaltest(data[column_name])
+
+    # Shapiro-Wilk test
+    # If dataset is too large, take a random sample for the Shapiro-Wilk test
+    sample_size = min(5000, len(data))
+    if len(data) > 5000:
+        sample_data = data[column_name].sample(n=sample_size, random_state=42)
+    else:
+        sample_data = data[column_name]
+    
+    stat_shapiro, p_value_shapiro = stats.shapiro(sample_data)
     
     print(f"Normality Test Results for {column_name}:")
     print(f"p-value: {p_value:.4f}")
     print("Skewness:", stats.skew(data[column_name]))
     print("Kurtosis:", stats.kurtosis(data[column_name]))
+
+    print(f"Shapiro-Wilk test p-value: {p_value_shapiro:.4f}")
+    if len(data) > 5000:
+        print(f"(Based on random sample of {sample_size} observations)")
     
     return fig
 
